@@ -86,6 +86,24 @@
 	<field name="TotalTributos" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[imposto/vTotTrib]]></fieldDescription>
 	</field>
+	<field name="vFCP" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//vFcp]]></fieldDescription>
+	</field>
+	<field name="pFCP" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//pFCP]]></fieldDescription>
+	</field>
+	<field name="vBCFCP" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//vBCFCP]]></fieldDescription>
+	</field>
+	<field name="vBCFCPST" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//vBCFCPST]]></fieldDescription>
+	</field>
+	<field name="pFCPST" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//pFCPST]]></fieldDescription>
+	</field>
+	<field name="vFCPST" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//vFCPST]]></fieldDescription>
+	</field>
 	<background>
 		<band splitType="Stretch"/>
 	</background>
@@ -529,12 +547,12 @@
 				<textElement textAlignment="Left" verticalAlignment="Middle">
 					<font fontName="Arial" size="6" pdfFontName="Courier"/>
 				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{DescricaoProduto} +
-(
-    !StringUtils.isEmpty($F{infAdProd}) ?
-    ( " | " +  $F{infAdProd}) :
-    ""
-)]]></textFieldExpression>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{DescricaoProduto}
++ (!StringUtils.isEmpty($F{infAdProd}) ? ( " |" +  $F{infAdProd}) : "")
++ (!StringUtils.isEmpty($F{vFCP}) ? ( "|vFCP " +  $F{vFCP}) : "")
++ (!StringUtils.isEmpty($F{pFCP}) ? ( "|pFCP " +  $F{pFCP}) : "")
++ (!StringUtils.isEmpty($F{vBCFCP}) ? ( "|vBCFCP " +  $F{vBCFCP}) : "")
++ (!StringUtils.isEmpty($F{vBCFCPST}) ? ( "|vBCFCPST " +  $F{vBCFCPST}) : "")]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement key="textField-17" stretchType="RelativeToTallestObject" mode="Transparent" x="513" y="0" width="19" height="10" isPrintWhenDetailOverflows="true"/>
