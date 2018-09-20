@@ -104,6 +104,12 @@
 	<field name="vFCPST" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[imposto/ICMS//vFCPST]]></fieldDescription>
 	</field>
+	<field name="vBCST" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//vFCPST]]></fieldDescription>
+	</field>
+	<field name="vBC" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[imposto/ICMS//vFC]]></fieldDescription>
+	</field>
 	<background>
 		<band splitType="Stretch"/>
 	</background>
@@ -549,11 +555,16 @@
 				</textElement>
 				<textFieldExpression class="java.lang.String"><![CDATA[$F{DescricaoProduto}
 + (!StringUtils.isEmpty($F{infAdProd}) ? ( " |" +  $F{infAdProd}) : "")
-+ (!StringUtils.isEmpty($F{vBCFCP}) || !StringUtils.isEmpty($F{pFCP}) || !StringUtils.isEmpty($F{vFCP}) || !StringUtils.isEmpty($F{vBCFCPST}) || !StringUtils.isEmpty($F{pFCPST}) || !StringUtils.isEmpty($F{vFCPST})) ? ( "\n" : "")
-+ (!StringUtils.isEmpty($F{vBCFCP}) ? (" vBCFCP: " +  $F{vBCFCP}) : "")
++ (!StringUtils.isEmpty($F{pFCP}) ||
+!StringUtils.isEmpty($F{vFCP}) ||
+!StringUtils.isEmpty($F{vBC}) ||
+!StringUtils.isEmpty($F{vBCST}) ||
+!StringUtils.isEmpty($F{pFCPST}) ||
+!StringUtils.isEmpty($F{vFCPST}) ? "\n" : "")
 + (!StringUtils.isEmpty($F{pFCP}) ? ( " pFCP: " +  $F{pFCP}) : "")
 + (!StringUtils.isEmpty($F{vFCP}) ? ( " vFCP: " +  $F{vFCP}) : "")
-+ (!StringUtils.isEmpty($F{vBCFCPST}) ? (" vBCFCPST: " +  $F{vBCFCPST}) : "")
++ (!StringUtils.isEmpty($F{vBC}) ? (" vBC: " +  $F{vBC}) : "")
++ (!StringUtils.isEmpty($F{vBCST}) ? (" vBCST: " +  $F{vBCST}) : "")
 + (!StringUtils.isEmpty($F{pFCPST}) ? (" pFCPST: " +  $F{pFCPST}) : "")
 + (!StringUtils.isEmpty($F{vFCPST}) ? (" vFCPST: " +  $F{vFCPST}) : "")]]></textFieldExpression>
 			</textField>
