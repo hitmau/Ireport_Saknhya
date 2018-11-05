@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MetasPorDias" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="2.3579476910000063"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="133"/>
+	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
+	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true" pdfFontName="Times-Roman"/>
+	<style name="Detail" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman"/>
+	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
+			<style mode="Opaque" backcolor="#F0EFEF"/>
+		</conditionalStyle>
+	</style>
+	<parameter name="PK_CODUSU" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+    EMAIL
+    , TO_DATE(SYSDATE, 'DD/MM/YYYY') AS DDD
+    , CODVEND
+    , (SELECT V.APELIDO FROM TGFVEN V WHERE V.CODVEND = t.CODVEND) AS VENDEDOR
+    , GRUPO
+    , NOME
+    , META
+    , METAMES
+    , METASTOTAL
+    , VendasPeriodo
+    , (SELECT SUM(TOTAL)
+FROM
+(SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV) AS TOTAL
+FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+               INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+               INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+               INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+WHERE CAB.CODTIPOPER IN (3200, 3212)
+ AND CAB.STATUSNFE = 'A'
+ AND CAB.CODVEND = $P{PK_CODUSU}
+ AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+
+UNION ALL
+
+SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV) AS TOTAL
+FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+               INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+               INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+               INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+WHERE CAB.CODTIPOPER IN (2200,2201,2211)
+ AND CAB.STATUSNOTA = 'L'
+ AND CAB.CODVEND = $P{PK_CODUSU}
+ AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE)))) TOTALZAO
+
+    , ((CASE WHEN (METAMES - VendasPeriodo) < 0 THEN 0 ELSE NVL((METAMES - VendasPeriodo),0) END) / (CASE WHEN (LAST_DAY(SYSDATE) - (SYSDATE)) = 0 THEN 1 ELSE (LAST_DAY(SYSDATE) - (SYSDATE)) END)) AS MetaDinamicaDoDia
+FROM (SELECT (SELECT C3.EMAIL FROM TSIUSU C3 WHERE A3.CODVEND = C3.CODVEND) AS EMAIL
+     , A3.GRUPO
+     , A3.NOME
+     , A3.CODVEND
+     , A3.VALOR AS META
+     , (SELECT
+             SUM(A6.SUGMETVENDDIA) AS VALOR
+        FROM
+            AD_SUBGRUPOVENDMETDIAS A6 INNER JOIN TGFGRU G ON (A6.CODGRUPOPROD = G.CODGRUPOPROD)
+                         INNER JOIN TSIUSU USU ON (A6.CODVEND = USU.CODVEND)
+                         INNER JOIN TGFVEN VEN ON (A6.CODVEND = VEN.CODVEND)
+                         INNER JOIN AD_GRUPROSPROD A1 ON (A6.ID=A1.ID)
+        WHERE A1.DTVIGOR BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+            AND USU.CODGRUPO = 10
+            AND A6.CODVEND = A3.CODVEND
+            AND A6.CODGRUPOPROD = A3.GRUPO
+        GROUP BY USU.CODVEND, USU.CODGRUPO, A6.CODVEND, VEN.APELIDO, A6.CODGRUPOPROD) METAMES
+     , (SELECT
+             SUM(A6.SUGMETVENDDIA) AS VALOR
+        FROM
+            AD_SUBGRUPOVENDMETDIAS A6 INNER JOIN TGFGRU G ON (A6.CODGRUPOPROD = G.CODGRUPOPROD)
+                         INNER JOIN TSIUSU USU ON (A6.CODVEND = USU.CODVEND)
+                         INNER JOIN TGFVEN VEN ON (A6.CODVEND = VEN.CODVEND)
+                         INNER JOIN AD_GRUPROSPROD A1 ON (A6.ID=A1.ID)
+        WHERE A1.DTVIGOR BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+            AND USU.CODGRUPO = 10
+            AND A6.CODVEND = A3.CODVEND
+        GROUP BY USU.CODVEND, A6.CODVEND, VEN.APELIDO) MetasTotal
+        , VendasPeriodo
+FROM (SELECT
+        A3.DATA,
+        A3.CODGRUPOPROD AS GRUPO,
+        GRU.DESCRGRUPOPROD  AS NOME,
+        ROUND(A3.SUGMETVENDDIA, 2) AS VALOR,
+        A3.CODVEND,
+        VEN.APELIDO AS VENDEDOR,
+        (SELECT SUM(A3.SUGMETVENDDIA)
+         FROM AD_SUBGRUPOVENDMETDIAS A3 INNER JOIN TSIUSU USU ON (A3.CODVEND = USU.CODVEND)
+         WHERE A3.DATA = TRUNC(SYSDATE)
+           AND USU.CODGRUPO = 10
+           AND USU.CODVEND = $P{PK_CODUSU}) AS TOTAL
+    FROM
+        AD_SUBGRUPOVENDMETDIAS A3 INNER JOIN TGFGRU GRU ON (A3.CODGRUPOPROD = GRU.CODGRUPOPROD)
+                     INNER JOIN TSIUSU USU ON (A3.CODVEND = USU.CODVEND)
+                     INNER JOIN TGFVEN VEN ON (A3.CODVEND = VEN.CODVEND)
+                     INNER JOIN AD_GRUPROSPROD A1 ON (A3.ID=A1.ID)
+    WHERE A3.DATA = TRUNC(SYSDATE)
+        AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+        AND USU.CODGRUPO = 10
+        AND USU.CODVEND = $P{PK_CODUSU}) A3
+        ----------------------LEFT
+        LEFT JOIN (SELECT GRUPO
+         , TOTAL AS VendasPeriodo
+         , CODVEND
+         , TOTALZAO
+                             FROM (
+                                   SELECT PRO.CODGRUPOPROD AS GRUPO
+                                    , SUM( ((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV ) AS TOTAL
+                                    , CAB.CODVEND
+                                    , (SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV) AS TOTAL
+                                        FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                                                       INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                                                       INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                                                       INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+                                        WHERE CAB.CODTIPOPER IN (3200, 3212)
+                                         AND CAB.STATUSNFE = 'A'
+                                         AND CAB.CODVEND = $P{PK_CODUSU}
+                                         AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+                                        ) TOTALZAO
+                                FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                                               INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                                               INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                                               INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+                                WHERE CAB.CODTIPOPER IN (3200, 3212)
+                                 AND CAB.STATUSNFE = 'A'
+                                 AND CAB.CODVEND = $P{PK_CODUSU}
+                                 AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+                                GROUP BY PRO.CODGRUPOPROD, CAB.CODVEND
+
+
+ UNION ALL
+
+
+        SELECT PRO.CODGRUPOPROD AS GRUPO
+            , SUM( ((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV ) AS TOTAL
+            , CAB.CODVEND
+            , (SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV ) AS TOTAL
+                FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                               INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                               INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                               INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+                WHERE CAB.CODTIPOPER IN (2200,2201,2211)
+                 AND CAB.STATUSNFE = 'A'
+                 AND CAB.CODVEND = $P{PK_CODUSU}
+                 AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+                ) TOTALZAO
+        FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                       INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                       INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                       INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+        WHERE CAB.CODTIPOPER IN (2200,2201,2211)
+         AND CAB.STATUSNFE = 'A'
+         AND CAB.CODVEND = $P{PK_CODUSU}
+         AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+        GROUP BY PRO.CODGRUPOPROD, CAB.CODVEND
+        ORDER BY GRUPO DESC)) A
+        ON (A.GRUPO = A3.GRUPO)
+ORDER BY A3.GRUPO) t]]>
+	</queryString>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="DDD" class="java.sql.Timestamp"/>
+	<field name="CODVEND" class="java.math.BigDecimal"/>
+	<field name="VENDEDOR" class="java.lang.String"/>
+	<field name="GRUPO" class="java.math.BigDecimal"/>
+	<field name="NOME" class="java.lang.String"/>
+	<field name="META" class="java.math.BigDecimal"/>
+	<field name="METAMES" class="java.math.BigDecimal"/>
+	<field name="METASTOTAL" class="java.math.BigDecimal"/>
+	<field name="VENDASPERIODO" class="java.math.BigDecimal"/>
+	<field name="TOTALZAO" class="java.math.BigDecimal"/>
+	<field name="METADINAMICADODIA" class="java.math.BigDecimal"/>
+	<group name="CODVEND">
+		<groupExpression><![CDATA[$F{CODVEND}]]></groupExpression>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="147" splitType="Stretch">
+			<rectangle>
+				<reportElement x="1" y="90" width="337" height="13" forecolor="#F0F0F0" backcolor="#F2F2F2"/>
+			</rectangle>
+			<frame>
+				<reportElement mode="Opaque" x="0" y="0" width="0" height="42" forecolor="#0066FF" backcolor="#F0F0F0"/>
+			</frame>
+			<textField evaluationTime="Report" pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-5" mode="Opaque" x="791" y="0" width="15" height="12" forecolor="#000000" backcolor="#FFFFFF"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#FFFFFF"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Top" rotation="None" lineSpacing="Single">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[""+$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-1" mode="Opaque" x="682" y="0" width="108" height="12" forecolor="#000000" backcolor="#FFFFFF"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#FFFFFF"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Top" rotation="None" lineSpacing="Single">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA["Página " + $V{PAGE_NUMBER} + " de "]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="609" y="42" width="192" height="14" forecolor="#000000" backcolor="#000000"/>
+				<textElement textAlignment="Right" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{EMAIL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement mode="Opaque" x="1" y="22" width="111" height="14" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Metas de venda:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="1" y="2" width="192" height="20" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="14" isBold="true" isItalic="true" isUnderline="false" isStrikeThrough="false" pdfFontName="Times-BoldItalic" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Sankhya Comercial]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="55" width="802" height="1"/>
+			</line>
+			<textField>
+				<reportElement mode="Opaque" x="0" y="42" width="373" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{VENDEDOR}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="145" width="802" height="1"/>
+			</line>
+			<staticText>
+				<reportElement mode="Transparent" x="0" y="132" width="87" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Grupo de produtos]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="284" y="132" width="84" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Total de Vendas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="388" y="132" width="87" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Meta Proposta/Dia]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="515" y="132" width="87" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Meta do mês]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="723" y="132" width="73" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Alvo do Mês]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="623" y="131" width="87" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Alvo do Dia]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="0" y="76" width="100" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Total de vendas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="133" y="76" width="100" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Mestas do Mês]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="259" y="76" width="28" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Alvo]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="1" y="56" width="800" height="19" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Center" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="16" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Metas do Mês]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="-1" y="110" width="800" height="19" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Center" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="16" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Metas por Grupos de Produtos]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="89" width="802" height="1"/>
+			</line>
+			<textField pattern="¤ #,##0.00">
+				<reportElement mode="Transparent" x="133" y="90" width="100" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METASTOTAL}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement mode="Transparent" x="0" y="90" width="100" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{TOTALZAO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement mode="Transparent" x="259" y="90" width="100" height="13" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METASTOTAL} - $F{TOTALZAO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement mode="Opaque" x="87" y="22" width="272" height="14" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="10" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{DDD}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<rectangle>
+				<reportElement style="Row" x="-1" y="1" width="802" height="14" forecolor="#FFFFFF" backcolor="#EFEFEF"/>
+			</rectangle>
+			<textField>
+				<reportElement x="55" y="0" width="233" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{NOME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement x="284" y="0" width="100" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{VENDASPERIODO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement x="388" y="0" width="87" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{META}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement x="515" y="0" width="87" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METAMES}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="55" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{GRUPO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement x="723" y="1" width="73" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METAMES} - $F{VENDASPERIODO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement x="622" y="1" width="88" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METADINAMICADODIA}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="26" splitType="Stretch">
+			<frame>
+				<reportElement mode="Opaque" x="0" y="0" width="802" height="25" forecolor="#D0B48E" backcolor="#000000"/>
+				<textField evaluationTime="Report">
+					<reportElement style="Column header" x="757" y="3" width="40" height="20" forecolor="#FFFFFF"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10" isBold="false"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement style="Column header" x="677" y="3" width="80" height="20" forecolor="#FFFFFF"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font size="10" isBold="false"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA["Pág. "+$V{PAGE_NUMBER}+" de"]]></textFieldExpression>
+				</textField>
+				<textField pattern="EEEEE dd MMMMM yyyy">
+					<reportElement style="Column header" x="3" y="3" width="145" height="20" forecolor="#FFFFFF"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10" isBold="false"/>
+					</textElement>
+					<textFieldExpression class="java.util.Date"><![CDATA[new java.util.Date()]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MetasPorDias_subreport1" language="groovy" pageWidth="380" pageHeight="802" columnWidth="380" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+	<property name="ireport.zoom" value="2.143588810000005"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[SELECT DISTINCT to_char(GRUPO) as GRUPO
+, EMAIL
+, NOMEGRUPO
+    , SUM(VENDA)AS VENDA
+    , META
+    , CODVEND
+    , METAMES
+    , CASE WHEN (METAMES - SUM(VENDA)) < 0 THEN 0 ELSE NVL((METAMES - SUM(VENDA)),0) END AS ALVOS
+, ((CASE WHEN (METAMES - SUM(VENDA)) < 0 THEN 0 ELSE NVL((METAMES - SUM(VENDA)),0) END) / (CASE WHEN (LAST_DAY(SYSDATE - 5) - (SYSDATE - 5)) = 0 THEN 1 ELSE (LAST_DAY(SYSDATE - 5) - (SYSDATE - 5)) END)) AS MetaDinamicaDoDia
+FROM
+(SELECT (SELECT C3.EMAIL FROM TSIUSU C3 WHERE A.CODVEND = C3.CODVEND) AS EMAIL
+     , A.GRUPO
+     , GRU.DESCRGRUPOPROD AS NOMEGRUPO
+     , SUM(A.TOTAL) AS VENDA
+     , A3.VALOR AS META
+     , A.CODVEND AS CODVEND
+     , (SELECT
+             SUM(A3.SUGMETVENDDIA) AS VALOR
+        FROM
+            AD_SUBGRUPOVENDMETDIAS A3 INNER JOIN TGFGRU G ON (A3.CODGRUPOPROD = G.CODGRUPOPROD)
+                         INNER JOIN TSIUSU USU ON (A3.CODVEND = USU.CODVEND)
+                         INNER JOIN TGFVEN VEN ON (A3.CODVEND = VEN.CODVEND)
+                         INNER JOIN AD_GRUPROSPROD A1 ON (A3.ID=A1.ID)
+        WHERE A1.DTVIGOR BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+            AND USU.CODGRUPO = 10
+            AND A3.CODVEND = A.CODVEND
+            AND A3.CODGRUPOPROD = A.GRUPO
+        GROUP BY USU.CODVEND, USU.CODGRUPO, A3.CODVEND, VEN.APELIDO, A3.CODGRUPOPROD) METAMES
+FROM (SELECT GRUPO
+
+         , TOTAL
+         , CODVEND
+         , TOTALZAO
+                             FROM (
+                                   SELECT PRO.CODGRUPOPROD AS GRUPO
+                                    , SUM( ((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV ) AS TOTAL
+                                    , CAB.CODVEND
+                                    , (SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV ) AS TOTAL
+                                        FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                                                       INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                                                       INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                                                       INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+                                        WHERE CAB.CODTIPOPER IN (3200, 3212)
+                                         AND CAB.STATUSNFE = 'A'
+                                         AND CAB.CODVEND = 126
+                                         AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+                                        ) TOTALZAO
+                                FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                                               INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                                               INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                                               INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+                                WHERE CAB.CODTIPOPER IN (3200, 3212)
+                                 AND CAB.STATUSNFE = 'A'
+                                 AND CAB.CODVEND = 126
+                                 AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+                                GROUP BY PRO.CODGRUPOPROD, CAB.CODVEND
+
+
+ UNION ALL
+
+
+        SELECT PRO.CODGRUPOPROD AS GRUPO
+            , SUM( ((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV ) AS TOTAL
+            , CAB.CODVEND
+            , (SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV ) AS TOTAL
+                FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                               INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                               INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                               INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+                WHERE CAB.CODTIPOPER IN (2200,2201,2211)
+                 AND CAB.STATUSNFE = 'A'
+                 AND CAB.CODVEND = 126
+                 AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+                ) TOTALZAO
+        FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+                       INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
+                       INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
+                       INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
+        WHERE CAB.CODTIPOPER IN (2200,2201,2211)
+         AND CAB.STATUSNFE = 'A'
+         AND CAB.CODVEND = 126
+         AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+        GROUP BY PRO.CODGRUPOPROD, CAB.CODVEND
+        ORDER BY GRUPO DESC)) A INNER JOIN TGFGRU GRU ON (A.GRUPO = GRU.CODGRUPOPROD)
+                             right JOIN (SELECT
+                                            USU.CODUSU,
+                                            A3.DATA,
+                                            A3.CODGRUPOPROD AS GRUPO,
+                                            GRU.DESCRGRUPOPROD  AS NOME,
+                                            ROUND(A3.SUGMETVENDDIA, 2) AS VALOR,
+                                            A3.CODVEND || ' - ' || VEN.APELIDO AS VENDEDOR,
+                                            (SELECT SUM(A3.SUGMETVENDDIA)
+                                             FROM AD_SUBGRUPOVENDMETDIAS A3 INNER JOIN TSIUSU USU ON (A3.CODVEND = USU.CODVEND)
+                                             WHERE A3.DATA = TRUNC(SYSDATE)
+                                               AND USU.CODGRUPO = 10
+                                               AND USU.CODVEND = 126) AS TOTAL,
+                                            A3.CODVEND
+                                        FROM
+                                            AD_SUBGRUPOVENDMETDIAS A3 INNER JOIN TGFGRU GRU ON (A3.CODGRUPOPROD = GRU.CODGRUPOPROD)
+                                                         INNER JOIN TSIUSU USU ON (A3.CODVEND = USU.CODVEND)
+                                                         INNER JOIN TGFVEN VEN ON (A3.CODVEND = VEN.CODVEND)
+                                                         INNER JOIN AD_GRUPROSPROD A1 ON (A3.ID=A1.ID)
+                                        WHERE A3.DATA = TRUNC(SYSDATE)
+                                            AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+                                            AND USU.CODGRUPO = 10
+                                            AND USU.CODVEND = 126) A3 ON (A3.GRUPO = A.GRUPO)
+GROUP BY A.GRUPO, A.CODVEND, GRU.DESCRGRUPOPROD, A3.VALOR, A.TOTALZAO
+ORDER BY GRUPO, VENDA)
+WHERE NOMEGRUPO IS NOT NULL
+GROUP BY GRUPO, EMAIL, NOMEGRUPO, META, CODVEND, METAMES
+ORDER BY MetaDinamicaDoDia DESC, META, GRUPO]]>
+	</queryString>
+	<field name="GRUPO" class="java.lang.String"/>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="NOMEGRUPO" class="java.lang.String"/>
+	<field name="VENDA" class="java.math.BigDecimal"/>
+	<field name="META" class="java.math.BigDecimal"/>
+	<field name="CODVEND" class="java.math.BigDecimal"/>
+	<field name="METAMES" class="java.math.BigDecimal"/>
+	<field name="ALVOS" class="java.math.BigDecimal"/>
+	<field name="METADINAMICADODIA" class="java.math.BigDecimal"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="15" splitType="Stretch">
+			<staticText>
+				<reportElement mode="Transparent" x="0" y="0" width="100" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Grupo de produtos]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="125" y="0" width="62" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Valor das vendas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="195" y="0" width="47" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Meta do dia]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="289" y="0" width="48" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Meta do mês]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="337" y="0" width="43" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Alvo]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="14" width="380" height="1" forecolor="#999999"/>
+			</line>
+			<staticText>
+				<reportElement mode="Transparent" x="242" y="0" width="47" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Meta din.]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="17" splitType="Stretch">
+			<textField pattern="¤ #,##0.00">
+				<reportElement mode="Opaque" x="125" y="0" width="62" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{VENDA}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00" isBlankWhenNull="true">
+				<reportElement mode="Opaque" x="195" y="0" width="47" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{META}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00" isBlankWhenNull="true">
+				<reportElement mode="Opaque" x="289" y="0" width="48" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METAMES}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement mode="Opaque" x="0" y="0" width="125" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{GRUPO} + " - " + $F{NOMEGRUPO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00" isBlankWhenNull="true">
+				<reportElement mode="Opaque" x="337" y="0" width="43" height="17" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{ALVOS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00" isBlankWhenNull="true">
+				<reportElement mode="Transparent" x="242" y="0" width="47" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METADINAMICADODIA}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

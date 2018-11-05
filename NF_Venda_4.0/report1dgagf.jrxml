@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report1dgagf" language="groovy" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
+	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true" pdfFontName="Times-Roman"/>
+	<style name="Detail" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman"/>
+	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
+			<style mode="Opaque" backcolor="#F0EFEF"/>
+		</conditionalStyle>
+	</style>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+        USU.EMAIL
+      , A3.DATA
+      , A3.CODGRUPOPROD || ' - ' || GRU.DESCRGRUPOPROD AS GRUPO
+      , A3.CODVEND || ' - ' || VEN.APELIDO AS VENDEDOR
+      , ROUND(A3.SUGMETVENDDIA, 2) AS MetaDoDia
+      , (SELECT SUM(A4.SUGMETVENDDIA)
+         FROM AD_SUBGRUPOVENDMETDIAS A4 INNER JOIN TSIUSU USU ON (A4.CODVEND = USU.CODVEND)
+         WHERE A4.DATA = TRUNC(SYSDATE)
+           AND USU.CODGRUPO = 10
+           AND USU.CODVEND = A3.CODVEND) AS TotalDoDia
+      , (SELECT SUM(A4.SUGMETVENDDIA)
+         FROM AD_SUBGRUPOVENDMETDIAS A4 INNER JOIN TSIUSU USU ON (A4.CODVEND = USU.CODVEND)
+                                       INNER JOIN AD_GRUPROSPROD A1 ON (A4.ID=A1.ID)
+         WHERE A4.DATA BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+           AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+           AND USU.CODGRUPO = 10
+           AND USU.CODVEND = A3.CODVEND
+           AND A4.CODGRUPOPROD = A3.CODGRUPOPROD
+         GROUP BY A4.CODGRUPOPROD) AS MetaDoMes
+      , (SELECT SUM(A4.SUGMETVENDDIA)
+         FROM AD_SUBGRUPOVENDMETDIAS A4 INNER JOIN TSIUSU USU ON (A4.CODVEND = USU.CODVEND)
+                                       INNER JOIN AD_GRUPROSPROD A1 ON (A4.ID=A1.ID)
+         WHERE A4.DATA BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+           AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+           AND USU.CODGRUPO = 10
+           AND USU.CODVEND = A3.CODVEND) AS TotalDoMes
+      , A3.CODVEND
+    FROM
+        AD_SUBGRUPOVENDMETDIAS A3 INNER JOIN TGFGRU GRU ON (A3.CODGRUPOPROD = GRU.CODGRUPOPROD)
+                     INNER JOIN TSIUSU USU ON (A3.CODVEND = USU.CODVEND)
+                     INNER JOIN TGFVEN VEN ON (A3.CODVEND = VEN.CODVEND)
+                     INNER JOIN AD_GRUPROSPROD A1 ON (A3.ID=A1.ID)
+    WHERE A3.DATA = TRUNC(SYSDATE)
+        AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+        AND USU.CODGRUPO = 10
+        AND USU.CODVEND = 6]]>
+	</queryString>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="DATA" class="java.sql.Timestamp"/>
+	<field name="GRUPO" class="java.lang.String"/>
+	<field name="VENDEDOR" class="java.lang.String"/>
+	<field name="METADODIA" class="java.math.BigDecimal"/>
+	<field name="TOTALDODIA" class="java.math.BigDecimal"/>
+	<field name="METADOMES" class="java.math.BigDecimal"/>
+	<field name="TOTALDOMES" class="java.math.BigDecimal"/>
+	<field name="CODVEND" class="java.math.BigDecimal"/>
+	<group name="CODVEND">
+		<groupExpression><![CDATA[$F{CODVEND}]]></groupExpression>
+		<groupHeader>
+			<band height="37">
+				<frame>
+					<reportElement mode="Opaque" x="0" y="7" width="555" height="24" forecolor="#B89F7D" backcolor="#000000"/>
+					<textField isStretchWithOverflow="true">
+						<reportElement style="SubTitle" isPrintRepeatedValues="false" x="2" y="0" width="479" height="24" forecolor="#FFFFFF"/>
+						<textElement>
+							<font isBold="false"/>
+						</textElement>
+						<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{CODVEND}]]></textFieldExpression>
+					</textField>
+				</frame>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="6"/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="132" splitType="Stretch">
+			<image>
+				<reportElement x="456" y="0" width="99" height="132"/>
+				<imageExpression class="java.lang.String"><![CDATA["cherry.jpg"]]></imageExpression>
+			</image>
+			<frame>
+				<reportElement mode="Opaque" x="0" y="0" width="451" height="95" backcolor="#000000"/>
+				<staticText>
+					<reportElement style="Title" x="0" y="0" width="370" height="66"/>
+					<textElement>
+						<font isBold="false"/>
+					</textElement>
+					<text><![CDATA[Cherry Title]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="SubTitle" x="157" y="66" width="249" height="29"/>
+					<textElement>
+						<font size="22" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Cherry SubTitle]]></text>
+				</staticText>
+			</frame>
+			<frame>
+				<reportElement mode="Opaque" x="0" y="100" width="451" height="32" forecolor="#000000" backcolor="#CC0000"/>
+				<textField pattern="EEEEE dd MMMMM yyyy">
+					<reportElement x="307" y="12" width="144" height="20" forecolor="#FFFFFF"/>
+					<textElement textAlignment="Right">
+						<font size="12"/>
+					</textElement>
+					<textFieldExpression class="java.util.Date"><![CDATA[new java.util.Date()]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="26" splitType="Stretch">
+			<staticText>
+				<reportElement style="Column header" x="0" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[EMAIL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="69" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[DATA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="138" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[GRUPO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="207" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[VENDEDOR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="276" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[METADODIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="345" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[TOTALDODIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="414" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[METADOMES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="483" y="7" width="69" height="18" forecolor="#000000"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[TOTALDOMES]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<frame>
+				<reportElement style="Row" mode="Opaque" x="2" y="0" width="49" height="18"/>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="69" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[$F{EMAIL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="69" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.sql.Timestamp"><![CDATA[$F{DATA}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="138" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[$F{GRUPO}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="207" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[$F{VENDEDOR}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="276" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METADODIA}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="345" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{TOTALDODIA}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="414" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METADOMES}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement style="Detail" positionType="Float" x="483" y="0" width="69" height="18"/>
+					<textElement>
+						<font size="14"/>
+					</textElement>
+					<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{TOTALDOMES}]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="7" splitType="Stretch">
+			<line>
+				<reportElement positionType="FixRelativeToBottom" x="0" y="3" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#999999"/>
+				</graphicElement>
+			</line>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="25" splitType="Stretch">
+			<frame>
+				<reportElement mode="Opaque" x="0" y="1" width="555" height="24" forecolor="#D0B48E" backcolor="#000000"/>
+				<textField evaluationTime="Report">
+					<reportElement style="Column header" x="513" y="0" width="40" height="20" forecolor="#FFFFFF"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10" isBold="false"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement style="Column header" x="433" y="0" width="80" height="20" forecolor="#FFFFFF"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font size="10" isBold="false"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+				</textField>
+				<textField pattern="EEEEE dd MMMMM yyyy">
+					<reportElement style="Column header" x="2" y="1" width="197" height="20" forecolor="#FFFFFF"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10" isBold="false"/>
+					</textElement>
+					<textFieldExpression class="java.util.Date"><![CDATA[new java.util.Date()]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

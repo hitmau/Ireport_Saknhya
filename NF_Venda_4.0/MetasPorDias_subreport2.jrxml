@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MetasPorDias_subreport2" language="groovy" pageWidth="370" pageHeight="802" columnWidth="370" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+	<property name="ireport.zoom" value="1.9487171000000019"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[SELECT
+        USU.EMAIL
+      , A3.DATA
+      , A3.CODGRUPOPROD || ' - ' || GRU.DESCRGRUPOPROD AS GRUPO
+      , A3.CODVEND || ' - ' || VEN.APELIDO AS VENDEDOR
+      , ROUND(A3.SUGMETVENDDIA, 2) AS MetaDoDia
+      , (SELECT SUM(A4.SUGMETVENDDIA)
+         FROM AD_SUBGRUPOVENDMETDIAS A4 INNER JOIN TSIUSU USU ON (A4.CODVEND = USU.CODVEND)
+         WHERE A4.DATA = TRUNC(SYSDATE)
+           AND USU.CODGRUPO = 10
+           AND USU.CODVEND = A3.CODVEND) AS TotalDoDia
+      , (SELECT SUM(A4.SUGMETVENDDIA)
+         FROM AD_SUBGRUPOVENDMETDIAS A4 INNER JOIN TSIUSU USU ON (A4.CODVEND = USU.CODVEND)
+                                       INNER JOIN AD_GRUPROSPROD A1 ON (A4.ID=A1.ID)
+         WHERE A4.DATA BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+           AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+           AND USU.CODGRUPO = 10
+           AND USU.CODVEND = A3.CODVEND
+           AND A4.CODGRUPOPROD = A3.CODGRUPOPROD
+         GROUP BY A4.CODGRUPOPROD) AS MetaDoMes
+      , (SELECT SUM(A4.SUGMETVENDDIA)
+         FROM AD_SUBGRUPOVENDMETDIAS A4 INNER JOIN TSIUSU USU ON (A4.CODVEND = USU.CODVEND)
+                                       INNER JOIN AD_GRUPROSPROD A1 ON (A4.ID=A1.ID)
+         WHERE A4.DATA BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
+           AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+           AND USU.CODGRUPO = 10
+           AND USU.CODVEND = A3.CODVEND) AS TotalDoMes
+      , A3.CODVEND
+    FROM
+        AD_SUBGRUPOVENDMETDIAS A3 INNER JOIN TGFGRU GRU ON (A3.CODGRUPOPROD = GRU.CODGRUPOPROD)
+                     INNER JOIN TSIUSU USU ON (A3.CODVEND = USU.CODVEND)
+                     INNER JOIN TGFVEN VEN ON (A3.CODVEND = VEN.CODVEND)
+                     INNER JOIN AD_GRUPROSPROD A1 ON (A3.ID=A1.ID)
+    WHERE A3.DATA = TRUNC(SYSDATE)
+        AND TO_CHAR(A1.DTVIGOR, 'mm/yyyy') = TO_CHAR(TRUNC(SYSDATE), 'mm/yyyy')
+        AND USU.CODGRUPO = 10
+        AND USU.CODVEND = 126
+ORDER BY GRUPO]]>
+	</queryString>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="DATA" class="java.sql.Timestamp"/>
+	<field name="GRUPO" class="java.lang.String"/>
+	<field name="VENDEDOR" class="java.lang.String"/>
+	<field name="METADODIA" class="java.math.BigDecimal"/>
+	<field name="TOTALDODIA" class="java.math.BigDecimal"/>
+	<field name="METADOMES" class="java.math.BigDecimal"/>
+	<field name="TOTALDOMES" class="java.math.BigDecimal"/>
+	<field name="CODVEND" class="java.math.BigDecimal"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="16" splitType="Stretch">
+			<staticText>
+				<reportElement mode="Transparent" x="2" y="0" width="150" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Grupo de produtos]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="170" y="0" width="59" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Meta do dia]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Transparent" x="250" y="1" width="59" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="8" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<text><![CDATA[Meta do mês]]></text>
+			</staticText>
+			<line>
+				<reportElement x="357" y="2" width="1" height="13" forecolor="#CCCCCC"/>
+			</line>
+			<line>
+				<reportElement x="2" y="15" width="308" height="1" forecolor="#999999"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement mode="Transparent" x="2" y="0" width="150" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{GRUPO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement mode="Transparent" x="170" y="0" width="59" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METADODIA}]]></textFieldExpression>
+			</textField>
+			<textField pattern="¤ #,##0.00">
+				<reportElement mode="Transparent" x="250" y="0" width="60" height="15" forecolor="#000000" backcolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None" lineSpacing="Single" markup="none">
+					<font fontName="Arial" size="7" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="br/com/sankhya/modelcore/report/font/arialbd.ttf" pdfEncoding="Cp1252" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METADOMES}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="357" y="1" width="1" height="13" forecolor="#CCCCCC"/>
+			</line>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>
