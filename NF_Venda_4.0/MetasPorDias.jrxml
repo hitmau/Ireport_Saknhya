@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MetasPorDias" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
 	<property name="ireport.zoom" value="2.3579476910000063"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="133"/>
+	<property name="ireport.y" value="72"/>
 	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
 	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
 	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true" pdfFontName="Times-Roman"/>
@@ -19,23 +19,37 @@
 	<queryString>
 		<![CDATA[SELECT
     EMAIL
-    , TO_DATE(SYSDATE, 'DD/MM/YYYY') AS DDD
+    , DDD
     , CODVEND
-    , (SELECT V.APELIDO FROM TGFVEN V WHERE V.CODVEND = t.CODVEND) AS VENDEDOR
+    , VENDEDOR
     , GRUPO
     , NOME
     , META
     , METAMES
     , METASTOTAL
-    , VendasPeriodo
-    , (SELECT SUM(TOTAL)
+    , TOTALZAO
+    , ((CASE WHEN (METAMES - SUM(VENDASPERIODO)) < 0 THEN 0 ELSE NVL((METAMES - SUM(VENDASPERIODO)),0) END) / (CASE WHEN (LAST_DAY(SYSDATE) - (SYSDATE)) = 0 THEN 1 ELSE (LAST_DAY(SYSDATE) - (SYSDATE)) END)) AS MetaDinamicaDoDia
+    , SUM(VENDASPERIODO) AS VENDASPERIODO
 FROM
-(SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV) AS TOTAL
-FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
+(SELECT
+    EMAIL
+    , TRUNC(SYSDATE) AS DDD
+    , CODVEND
+    , (SELECT V.APELIDO FROM TGFVEN V WHERE V.CODVEND = t.CODVEND) AS VENDEDOR
+    , GRUPO
+    , NOME
+    , META
+    , nvl(METAMES,0) as METAMES
+    , nvl(METASTOTAL,0) as METASTOTAL
+    , nvl(VendasPeriodo,0) as VendasPeriodo
+    , nvl((SELECT SUM(TOTAL)
+           FROM
+          (SELECT SUM(((ITE.VLRTOT - ITE.VLRDESC - ITE.VLRREPRED + ITE.VLRSUBST + ITE.VLRIPI)  * VCA.INDITENSBRUTO) * CASE WHEN TOP.BONIFICACAO = 'S' THEN 0 ELSE 1 END * TOP.GOLDEV) AS TOTAL
+           FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
                INNER JOIN TGFPRO PRO ON (ITE.CODPROD = PRO.CODPROD)
                INNER JOIN VGFCAB VCA ON (CAB.NUNOTA = VCA.NUNOTA)
                INNER JOIN TGFTOP TOP ON (CAB.CODTIPOPER = TOP.CODTIPOPER AND CAB.DHTIPOPER = TOP.DHALTER AND TOP.GOLSINAL = -1)
-WHERE CAB.CODTIPOPER IN (3200, 3212)
+            WHERE CAB.CODTIPOPER IN (3200, 3212)
  AND CAB.STATUSNFE = 'A'
  AND CAB.CODVEND = $P{PK_CODUSU}
  AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE))
@@ -50,9 +64,9 @@ FROM TGFCAB CAB INNER JOIN TGFITE ITE ON (CAB.NUNOTA = ITE.NUNOTA)
 WHERE CAB.CODTIPOPER IN (2200,2201,2211)
  AND CAB.STATUSNOTA = 'L'
  AND CAB.CODVEND = $P{PK_CODUSU}
- AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE)))) TOTALZAO
+ AND TRUNC(CAB.DTFATUR) BETWEEN TRUNC(SYSDATE, 'mm') AND TRUNC(LAST_DAY(SYSDATE)))),0) TOTALZAO
 
-    , ((CASE WHEN (METAMES - VendasPeriodo) < 0 THEN 0 ELSE NVL((METAMES - VendasPeriodo),0) END) / (CASE WHEN (LAST_DAY(SYSDATE) - (SYSDATE)) = 0 THEN 1 ELSE (LAST_DAY(SYSDATE) - (SYSDATE)) END)) AS MetaDinamicaDoDia
+
 FROM (SELECT (SELECT C3.EMAIL FROM TSIUSU C3 WHERE A3.CODVEND = C3.CODVEND) AS EMAIL
      , A3.GRUPO
      , A3.NOME
@@ -160,7 +174,17 @@ FROM (SELECT
         GROUP BY PRO.CODGRUPOPROD, CAB.CODVEND
         ORDER BY GRUPO DESC)) A
         ON (A.GRUPO = A3.GRUPO)
-ORDER BY A3.GRUPO) t]]>
+ORDER BY A3.GRUPO) t)
+GROUP BY     EMAIL
+    , DDD
+    , CODVEND
+    , VENDEDOR
+    , GRUPO
+    , NOME
+    , META
+    , METAMES
+    , METASTOTAL
+    , TOTALZAO]]>
 	</queryString>
 	<field name="EMAIL" class="java.lang.String"/>
 	<field name="DDD" class="java.sql.Timestamp"/>
@@ -171,9 +195,9 @@ ORDER BY A3.GRUPO) t]]>
 	<field name="META" class="java.math.BigDecimal"/>
 	<field name="METAMES" class="java.math.BigDecimal"/>
 	<field name="METASTOTAL" class="java.math.BigDecimal"/>
-	<field name="VENDASPERIODO" class="java.math.BigDecimal"/>
 	<field name="TOTALZAO" class="java.math.BigDecimal"/>
 	<field name="METADINAMICADODIA" class="java.math.BigDecimal"/>
+	<field name="VENDASPERIODO" class="java.math.BigDecimal"/>
 	<group name="CODVEND">
 		<groupExpression><![CDATA[$F{CODVEND}]]></groupExpression>
 	</group>
@@ -349,7 +373,7 @@ ORDER BY A3.GRUPO) t]]>
 				</textElement>
 				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{METASTOTAL} - $F{TOTALZAO}]]></textFieldExpression>
 			</textField>
-			<textField pattern="dd/MM/yyyy">
+			<textField pattern="MM/dd/yyyy">
 				<reportElement mode="Opaque" x="87" y="22" width="272" height="14" forecolor="#000000" backcolor="#FFFFFF"/>
 				<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" lineSpacing="Single" markup="none">
 					<font fontName="Arial" size="10" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Courier-Bold" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
@@ -410,32 +434,7 @@ ORDER BY A3.GRUPO) t]]>
 		<band splitType="Stretch"/>
 	</columnFooter>
 	<pageFooter>
-		<band height="26" splitType="Stretch">
-			<frame>
-				<reportElement mode="Opaque" x="0" y="0" width="802" height="25" forecolor="#D0B48E" backcolor="#000000"/>
-				<textField evaluationTime="Report">
-					<reportElement style="Column header" x="757" y="3" width="40" height="20" forecolor="#FFFFFF"/>
-					<textElement verticalAlignment="Middle">
-						<font size="10" isBold="false"/>
-					</textElement>
-					<textFieldExpression class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
-				</textField>
-				<textField>
-					<reportElement style="Column header" x="677" y="3" width="80" height="20" forecolor="#FFFFFF"/>
-					<textElement textAlignment="Right" verticalAlignment="Middle">
-						<font size="10" isBold="false"/>
-					</textElement>
-					<textFieldExpression class="java.lang.String"><![CDATA["Pág. "+$V{PAGE_NUMBER}+" de"]]></textFieldExpression>
-				</textField>
-				<textField pattern="EEEEE dd MMMMM yyyy">
-					<reportElement style="Column header" x="3" y="3" width="145" height="20" forecolor="#FFFFFF"/>
-					<textElement verticalAlignment="Middle">
-						<font size="10" isBold="false"/>
-					</textElement>
-					<textFieldExpression class="java.util.Date"><![CDATA[new java.util.Date()]]></textFieldExpression>
-				</textField>
-			</frame>
-		</band>
+		<band splitType="Stretch"/>
 	</pageFooter>
 	<summary>
 		<band splitType="Stretch"/>
